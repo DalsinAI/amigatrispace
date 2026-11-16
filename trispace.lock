@@ -1,0 +1,12 @@
+# What this port builds on: fetched at build time, never shipped from here.
+# TriSpace (AGPL-3) 1.1.2+, master of 18 Dec 2025, with its engine
+# fk-engine-core (AGPL-3) at the commit TriSpace's submodule pins
+TS_GIT=https://github.com/robbi-blechdose/TriSpace.git
+TS_COMMIT=02f525fe72515606d6ed33525da7b9b97c5fa52a
+TS_VERSION=1.1.2
+FKC_GIT=https://github.com/robbi-blechdose/fk-engine-core.git
+FKC_COMMIT=1d797c7f6c6b33e3e50b14a00077a5d5d83e3754
+# TinyGL (zlib-style licence; C-Chads' version, which TriSpace's README names),
+# master of 4 Nov 2023: the software OpenGL subset the game draws with
+TGL_GIT=https://github.com/C-Chads/tinygl.git
+TGL_COMMIT=36a7987e7bebfda19615ea33341b1cc0ff9c3b13
