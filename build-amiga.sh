@@ -53,9 +53,11 @@ G="$SRC/TriSpace"
 LATE=""
 if m68k-amigaos-gcc -fno-late-combine-instructions -S -o /dev/null -x c /dev/null 2>/dev/null; then LATE="-fno-late-combine-instructions"; fi
 CPU="-m68040 -m68881"
-# no loops turned into memset/memcpy calls (GCC 16), address 0 is memory
+# no loops turned into memset/memcpy calls (GCC 16), address 0 is memory;
+# stb_image's thread-local flip flag would pull in libgcc's emutls (pthreads,
+# which libnix has not): the game loads images on one task only
 CF="-noixemul $CPU -O2 -fomit-frame-pointer -fno-tree-loop-distribute-patterns -fno-delete-null-pointer-checks $LATE \
- -std=gnu99 -Werror=implicit-function-declaration -I$HERE/amiga/compat -I$HERE/amiga -I$SRC/tinygl/include -I$G/src \
+ -std=gnu99 -DSTBI_NO_THREAD_LOCALS -Werror=implicit-function-declaration -I$HERE/amiga/compat -I$HERE/amiga -I$SRC/tinygl/include -I$G/src \
  -I$SDK/include/SDL2 -DTS_VERSION=\\\"$TS_VERSION\\\" -DTS_DATE=\\\"$(date -u +%d.%m.%Y)\\\""
 O="$WORK/obj"
 [ "$(cat "$O/.src" 2>/dev/null)" = "$(cat "$SRC/.patched")" ] || { rm -rf "$O"; mkdir -p "$O"; cat "$SRC/.patched" > "$O/.src"; }
