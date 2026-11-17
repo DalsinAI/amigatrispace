@@ -60,7 +60,9 @@ CF="-noixemul $CPU -O2 -fomit-frame-pointer -fno-tree-loop-distribute-patterns -
  -std=gnu99 -DSTBI_NO_THREAD_LOCALS -Werror=implicit-function-declaration -I$HERE/amiga/compat -I$HERE/amiga -I$SRC/tinygl/include -I$G/src \
  -I$SDK/include/SDL2 -DTS_VERSION=\\\"$TS_VERSION\\\" -DTS_DATE=\\\"$(date -u +%d.%m.%Y)\\\""
 O="$WORK/obj"
-[ "$(cat "$O/.src" 2>/dev/null)" = "$(cat "$SRC/.patched")" ] || { rm -rf "$O"; mkdir -p "$O"; cat "$SRC/.patched" > "$O/.src"; }
+# objects are remade when the sources or the flags change
+STAMP="$(cat "$SRC/.patched") $(echo "$CF" | sha256sum | cut -c1-16)"
+[ "$(cat "$O/.src" 2>/dev/null)" = "$STAMP" ] || { rm -rf "$O"; mkdir -p "$O"; echo "$STAMP" > "$O/.src"; }
 M="$O/Makefile"
 {
     echo "CF = $CF"
@@ -86,10 +88,11 @@ M="$O/Makefile"
 echo "compile: $(( $(date +%s) - t0 )) s"
 
 # --- link ------------------------------------------------------------------------
+# -lpthread: the stove's libgcc and SDL 2 build on its pthreads
 # shellcheck disable=SC2046
 m68k-amigaos-gcc -noixemul $CPU -o "$O/TriSpace.debug" \
     $(cd "$O" && for f in $(sed -n 's/^OBJS =//p' Makefile); do echo "$O/$f"; done) \
-    -L"$SDK/lib" -lSDL2_mixer -lSDL2_image -lSDL2 -lm > "$O/link.log" 2>&1 || { head -60 "$O/link.log"; exit 1; }
+    -L"$SDK/lib" -lSDL2_mixer -lSDL2_image -lSDL2 -lm -lpthread > "$O/link.log" 2>&1 || { head -60 "$O/link.log"; exit 1; }
 
 # --- the GFOpenUp part: Parts/TriSpace --------------------------------------------
 P="$OUT/Parts/TriSpace"; D="$P/Games/TriSpace"; rm -rf "$P"; mkdir -p "$D"
