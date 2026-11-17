@@ -1,0 +1,31 @@
+Saves: on AmigaOS there is no $HOME, so the game's own drawer keeps them
+(PROGDIR:Saves); elsewhere $HOME/.trispace as before. The folder is made and
+checked without a trailing '/' and the path is length-checked.
+
+--- a/TriSpace/src/fk-engine-core/savegame.c
++++ b/TriSpace/src/fk-engine-core/savegame.c
+@@ -10,13 +10,22 @@
+ bool openSave(char* folder, char* name, bool writing)
+ {
+     char buffer[255];
+-    sprintf(buffer, "%s/%s/", getenv("HOME"), folder);
++#ifdef __amigaos__
++    /* no $HOME on AmigaOS: the game's own drawer keeps its saves
++       (PROGDIR:Saves); the folder is made without a trailing '/' */
++    (void)folder;
++    snprintf(buffer, sizeof(buffer) - 64, "PROGDIR:Saves");
++#else
++    const char* home = getenv("HOME");
++    snprintf(buffer, sizeof(buffer) - 64, "%s/%s", home ? home : ".", folder);
++#endif
+     //Check if we have to create the folder
+     if(access(buffer, F_OK) == -1)
+     {
+         mkdir(buffer, 0755);
+     }
+-    strcat(buffer, name);
++    strcat(buffer, "/");
++    strncat(buffer, name, 63);
+     if(writing)
+     {
+         saveFile = fopen(buffer, "w+b");

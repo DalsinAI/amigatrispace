@@ -1,0 +1,71 @@
+fk-engine-core draws TinyGL's 16-bit frame through SDL 1.2's video mode;
+our SDL 2 (GFOpenGPU's SDL2.module on GFOS) has no video modes, so the frame
+goes into amiga/ts_display.c's window and RGB565 texture instead.
+
+--- a/TriSpace/src/fk-engine-core/video.c
++++ b/TriSpace/src/fk-engine-core/video.c
+@@ -1,11 +1,13 @@
+ #include "video.h"
+ 
+ #include <SDL/SDL.h>
++#include "ts_display.h"
++#include <stdio.h>
++#include <stdlib.h>
+ #define CHAD_API_IMPL
+ #include "zbuffer.h"
+ #include "GL/gl.h"
+ 
+-SDL_Surface* screen;
+ ZBuffer* frameBuffer = NULL;
+ 
+ mat4 mPerspective;
+@@ -39,12 +41,13 @@
+ 
+ void initVideo(vec4 clearColor, vec4 viewport, float fov, float near, float far)
+ {
+-    #ifdef FUNKEY
+-    screen = SDL_SetVideoMode(WINX, WINY, 16, SDL_FULLSCREEN | SDL_HWSURFACE);
+-    #else
+-    screen = SDL_SetVideoMode(WINX, WINY, 16, SDL_SWSURFACE);
+-    #endif
+-	SDL_ShowCursor(SDL_DISABLE);
++    /* an SDL 2 window and a 16-bit texture (amiga/ts_display.c) in place
++       of SDL 1.2's 16-bit video mode */
++    if(!ts_display_open(WINX, WINY))
++    {
++        printf("No display: %s\n", SDL_GetError());
++        exit(20);
++    }
+ 
+     //Initialize TinyGL
+ 	frameBuffer = ZB_open(WINX, WINY, ZB_MODE_5R6G5B, 0);
+@@ -72,26 +75,15 @@
+ 
+ void flipFrame()
+ {
+-    #ifndef FUNKEY
+-    if(SDL_MUSTLOCK(screen))
+-    {
+-        SDL_LockSurface(screen);
+-    }
+-    #endif
+-    ZB_copyFrameBuffer(frameBuffer, screen->pixels, screen->pitch);
+-    #ifndef FUNKEY
+-	if(SDL_MUSTLOCK(screen))
+-    {
+-		SDL_UnlockSurface(screen);
+-    }
+-    #endif
+-	SDL_Flip(screen);
++    ZB_copyFrameBuffer(frameBuffer, ts_display_pixels(), ts_display_pitch());
++    ts_display_present();
+ }
+ 
+ void quitVideo()
+ {
+ 	ZB_close(frameBuffer);
+ 	glClose();
++    ts_display_close();
+ 
+     SDL_Quit();
+ }
